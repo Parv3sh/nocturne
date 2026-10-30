@@ -1,0 +1,22 @@
+# Built application files
+*.apk
+*.aab
+
+# Gradle
+.gradle/
+build/
+
+# Local configuration file (sensitive path information)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
