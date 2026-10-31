@@ -5,9 +5,35 @@ Open-Meteo weather/forecast/AQI, IP-based location, sunrise/sunset, moon phase, 
 calendar feeds, world clocks, LAN phone notepad, brightness/night dimming, burn-in pixel shift,
 boot receiver, DreamService, and interactive app mode.
 
+## Screenshots
+
+Actual captures from a Fire TV Stick 4K and a 390 × 844 phone viewport.
+
+<p align="center">
+  <img src="docs/screenshots/minimal-notepad.png" alt="Minimal face with a note sent from a phone" width="88%">
+</p>
+
+| Flip | Analog | Dashboard | Ambient |
+| :---: | :---: | :---: | :---: |
+| ![Flip clock face](docs/screenshots/flip.png) | ![Analog clock face](docs/screenshots/analog.png) | ![Dashboard face](docs/screenshots/dashboard.png) | ![Ambient face](docs/screenshots/ambient.png) |
+
+### Phone notepad
+
+<p align="center">
+  <img src="docs/screenshots/phone-notepad.png" alt="Phone drawing page in a mobile viewport" width="300">
+  <img src="docs/screenshots/settings-phone-notepad.png" alt="Phone notepad settings with live preview" width="520">
+</p>
+
+### Settings
+
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Settings overlay" width="88%">
+</p>
+
 ## Files
 - `Nocturne-debug.apk` — debug APK, sideload via `adb install -r Nocturne-debug.apk`
 - `source/` — Android Studio/Gradle project
+- `docs/screenshots/` — captures used in the gallery above
 
 ## Build
 Requires JDK 21 + Android SDK 34 + Gradle 8.9.
