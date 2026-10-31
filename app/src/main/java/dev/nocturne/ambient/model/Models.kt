@@ -1,5 +1,6 @@
 package dev.nocturne.ambient.model
 
+import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 import java.time.LocalDate
@@ -42,7 +43,8 @@ data class Settings(
     val longitude: Double = 144.9631,
     val calendarUrls: String = "",
     val launchOnBoot: Boolean = true,
-    val onboardingSeen: Boolean = false
+    val onboardingSeen: Boolean = false,
+    val worldClockCities: List<ZoneCity> = defaultWorldCities
 ) {
     fun toJson(): String = JSONObject().apply {
         put("v", 1)
@@ -64,6 +66,14 @@ data class Settings(
         put("calendarUrls", calendarUrls)
         put("launchOnBoot", launchOnBoot)
         put("onboardingSeen", onboardingSeen)
+        put("worldClockCities", JSONArray().apply {
+            worldClockCities.forEach { city ->
+                put(JSONObject().apply {
+                    put("label", city.label)
+                    put("zone", city.zone)
+                })
+            }
+        })
     }.toString()
 
     companion object {
@@ -89,7 +99,18 @@ data class Settings(
                     longitude = o.optDouble("longitude", 144.9631),
                     calendarUrls = o.optString("calendarUrls", ""),
                     launchOnBoot = o.optBoolean("launchOnBoot", true),
-                    onboardingSeen = o.optBoolean("onboardingSeen", false)
+                    onboardingSeen = o.optBoolean("onboardingSeen", false),
+                    worldClockCities = o.optJSONArray("worldClockCities")?.let { arr ->
+                        (0 until arr.length()).mapNotNull { k ->
+                            arr.optJSONObject(k)?.let { obj ->
+                                val label = obj.optString("label")
+                                val zone = obj.optString("zone")
+                                if (label.isNotBlank() && zone.isNotBlank()) ZoneCity(label, zone) else null
+                            }
+                        }
+                    }.orEmpty().let { saved ->
+                        (saved + defaultWorldCities).distinctBy { it.zone + it.label }.take(3)
+                    }
                 )
             } catch (_: Exception) {
                 Settings()
@@ -118,6 +139,35 @@ val cityPresets = listOf(
     City("Tokyo", "JP", 35.6762, 139.6503),
     City("Singapore", "SG", 1.3521, 103.8198),
     City("Mumbai", "IN", 19.0760, 72.8777)
+)
+
+data class ZoneCity(val label: String, val zone: String)
+
+val zonePresets = listOf(
+    ZoneCity("Karachi", "Asia/Karachi"),
+    ZoneCity("Dubai", "Asia/Dubai"),
+    ZoneCity("Mumbai", "Asia/Kolkata"),
+    ZoneCity("Singapore", "Asia/Singapore"),
+    ZoneCity("Hong Kong", "Asia/Hong_Kong"),
+    ZoneCity("Tokyo", "Asia/Tokyo"),
+    ZoneCity("Sydney", "Australia/Sydney"),
+    ZoneCity("Auckland", "Pacific/Auckland"),
+    ZoneCity("Istanbul", "Europe/Istanbul"),
+    ZoneCity("Moscow", "Europe/Moscow"),
+    ZoneCity("London", "Europe/London"),
+    ZoneCity("Paris", "Europe/Paris"),
+    ZoneCity("New York", "America/New_York"),
+    ZoneCity("Miami", "America/New_York"),
+    ZoneCity("Chicago", "America/Chicago"),
+    ZoneCity("Nashville", "America/Chicago"),
+    ZoneCity("Los Angeles", "America/Los_Angeles"),
+    ZoneCity("Sao Paulo", "America/Sao_Paulo")
+)
+
+val defaultWorldCities = listOf(
+    ZoneCity("Karachi", "Asia/Karachi"),
+    ZoneCity("Miami", "America/New_York"),
+    ZoneCity("Nashville", "America/Chicago")
 )
 
 enum class WeatherKind {

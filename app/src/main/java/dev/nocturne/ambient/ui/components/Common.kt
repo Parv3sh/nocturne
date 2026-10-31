@@ -101,11 +101,9 @@ fun WorldClocks(
     settings: Settings,
     modifier: Modifier = Modifier
 ) {
-    val clocks = listOf(
-        "Europe/London" to "LONDON",
-        "America/New_York" to "NEW YORK",
-        "Asia/Tokyo" to "TOKYO"
-    )
+    val clocks = settings.worldClockCities.map { city ->
+        city.zone to city.label.uppercase()
+    }
     val now = ZonedDateTime.now()
     Row(
         modifier = modifier,

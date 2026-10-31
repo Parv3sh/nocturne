@@ -51,6 +51,7 @@ import dev.nocturne.ambient.ClockViewModel
 import dev.nocturne.ambient.model.Settings
 import dev.nocturne.ambient.model.WeatherData
 import dev.nocturne.ambient.model.cityPresets
+import dev.nocturne.ambient.model.zonePresets
 import dev.nocturne.ambient.ui.components.Eyebrow
 import dev.nocturne.ambient.ui.components.Hairline
 import dev.nocturne.ambient.ui.components.MoonGlyph
@@ -66,7 +67,7 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
-private enum class SettingsPage { MAIN, LOCATION, CALENDAR }
+private enum class SettingsPage { MAIN, LOCATION, CALENDAR, WORLD_CLOCK }
 
 @Composable
 fun SettingsOverlay(
@@ -111,6 +112,7 @@ fun SettingsOverlay(
                             SettingsPage.MAIN -> "Settings"
                             SettingsPage.LOCATION -> "Weather location"
                             SettingsPage.CALENDAR -> "Calendar feeds"
+                            SettingsPage.WORLD_CLOCK -> "World clocks"
                         },
                         fontFamily = Sora,
                         fontWeight = FontWeight.Light,
@@ -124,6 +126,7 @@ fun SettingsOverlay(
                             SettingsPage.MAIN -> "Nocturne 1.0  ·  Fire TV ambient display"
                             SettingsPage.LOCATION -> "Used for weather, sunrise and sunset"
                             SettingsPage.CALENDAR -> "Private iCal feeds, no account or OAuth"
+                            SettingsPage.WORLD_CLOCK -> "Three cities shown on the Analog and Dashboard faces"
                         },
                         style = EyebrowType.copy(letterSpacing = 1.6.sp),
                         color = palette.inkFaint
@@ -151,7 +154,8 @@ fun SettingsOverlay(
                             syncing = syncing,
                             firstFocus = focusRequester,
                             onOpenLocation = { page = SettingsPage.LOCATION },
-                            onOpenCalendar = { page = SettingsPage.CALENDAR }
+                            onOpenCalendar = { page = SettingsPage.CALENDAR },
+                            onOpenWorldClocks = { page = SettingsPage.WORLD_CLOCK }
                         )
                         SettingsPage.LOCATION -> LocationSettings(
                             viewModel = viewModel,
@@ -166,6 +170,13 @@ fun SettingsOverlay(
                             draft = calendarDraft,
                             onDraftChange = { calendarDraft = it },
                             focusRequester = focusRequester,
+                            onDone = { page = SettingsPage.MAIN }
+                        )
+                        SettingsPage.WORLD_CLOCK -> WorldClockSettings(
+                            viewModel = viewModel,
+                            settings = settings,
+                            palette = palette,
+                            firstFocus = focusRequester,
                             onDone = { page = SettingsPage.MAIN }
                         )
                     }
@@ -216,7 +227,8 @@ private fun MainSettings(
     syncing: Boolean,
     firstFocus: FocusRequester,
     onOpenLocation: () -> Unit,
-    onOpenCalendar: () -> Unit
+    onOpenCalendar: () -> Unit,
+    onOpenWorldClocks: () -> Unit
 ) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         item {
@@ -293,6 +305,16 @@ private fun MainSettings(
                 palette = palette,
                 valueAccent = settings.calendarUrls.isNotBlank(),
                 onClick = onOpenCalendar
+            )
+        }
+        item {
+            SettingRow(
+                label = "World clocks",
+                value = if (!settings.showWorldClocks) "Off"
+                else settings.worldClockCities.joinToString(" · ") { it.label },
+                palette = palette,
+                valueAccent = settings.showWorldClocks,
+                onClick = onOpenWorldClocks
             )
         }
         item {
@@ -449,13 +471,74 @@ private fun CalendarSettings(
 }
 
 @Composable
+private fun WorldClockSettings(
+    viewModel: ClockViewModel,
+    settings: Settings,
+    palette: Palette,
+    firstFocus: FocusRequester,
+    onDone: () -> Unit
+) {
+    fun cycle(slot: Int, direction: Int) {
+        viewModel.updateSettings { s ->
+            val cities = s.worldClockCities.toMutableList()
+            while (cities.size < 3) cities.add(zonePresets[cities.size % zonePresets.size])
+            val current = cities[slot]
+            val index = zonePresets.indexOfFirst { it.zone == current.zone && it.label == current.label }
+                .let { if (it < 0) 0 else it }
+            cities[slot] = zonePresets[(index + direction + zonePresets.size) % zonePresets.size]
+            s.copy(worldClockCities = cities)
+        }
+    }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        item {
+            SettingRow(
+                label = "Show world clocks",
+                value = if (settings.showWorldClocks) "On" else "Off",
+                palette = palette,
+                valueAccent = settings.showWorldClocks,
+                onClick = { viewModel.updateSettings { it.copy(showWorldClocks = !it.showWorldClocks) } },
+                modifier = Modifier.focusRequester(firstFocus)
+            )
+        }
+        items(3) { index ->
+            val current = settings.worldClockCities.getOrElse(index) { zonePresets[0] }
+            SettingRow(
+                label = "City ${index + 1}",
+                value = current.label,
+                palette = palette,
+                onClick = { cycle(index, 1) },
+                onLeft = { cycle(index, -1) },
+                onRight = { cycle(index, 1) }
+            )
+        }
+        item {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Left/right cycles through cities. All three appear on the Analog and Dashboard faces.",
+                style = EyebrowType.copy(letterSpacing = 0.8.sp),
+                color = palette.inkFaint
+            )
+        }
+        item {
+            Spacer(Modifier.height(12.dp))
+            SettingsButton(
+                label = "Done",
+                palette = palette,
+                primary = true,
+                onClick = onDone
+            )
+        }
+    }
+}
+
+@Composable
 private fun SettingsSidebar(
     settings: Settings,
     weather: WeatherData?,
     palette: Palette,
     modifier: Modifier = Modifier
 ) {
-    val now = rememberNow(false)
+    val now = rememberNow(true)
     val parts = timeParts(now.toLocalTime(), settings.use24Hour)
     val moonPhase = dev.nocturne.ambient.ui.moonPhaseFraction(now.toLocalDate())
 
@@ -463,7 +546,11 @@ private fun SettingsSidebar(
         Eyebrow("Live preview", palette)
         Spacer(Modifier.height(10.dp))
         Text(
-            text = "${parts.hour}:${parts.minute}",
+            text = if (settings.showSeconds) {
+                "${parts.hour}:${parts.minute}:${parts.second}"
+            } else {
+                "${parts.hour}:${parts.minute}"
+            },
             fontFamily = Sora,
             fontWeight = FontWeight.ExtraLight,
             fontSize = 46.sp,
