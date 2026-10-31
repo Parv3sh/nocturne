@@ -36,6 +36,7 @@ data class Settings(
     val showWeather: Boolean = true,
     val showCalendar: Boolean = true,
     val showWorldClocks: Boolean = true,
+    val noteEnabled: Boolean = true,
     val locationAuto: Boolean = true,
     val locationResolved: Boolean = false,
     val locationLabel: String = "Melbourne",
@@ -58,6 +59,7 @@ data class Settings(
         put("showWeather", showWeather)
         put("showCalendar", showCalendar)
         put("showWorldClocks", showWorldClocks)
+        put("noteEnabled", noteEnabled)
         put("locationAuto", locationAuto)
         put("locationResolved", locationResolved)
         put("locationLabel", locationLabel)
@@ -92,6 +94,7 @@ data class Settings(
                     showWeather = o.optBoolean("showWeather", true),
                     showCalendar = o.optBoolean("showCalendar", true),
                     showWorldClocks = o.optBoolean("showWorldClocks", true),
+                    noteEnabled = o.optBoolean("noteEnabled", true),
                     locationAuto = o.optBoolean("locationAuto", true),
                     locationResolved = o.optBoolean("locationResolved", false),
                     locationLabel = o.optString("locationLabel", "Melbourne"),

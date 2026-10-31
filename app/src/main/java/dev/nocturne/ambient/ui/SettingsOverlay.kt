@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nocturne.ambient.ClockViewModel
+import dev.nocturne.ambient.data.NoteServer
 import dev.nocturne.ambient.model.CalendarEvent
 import dev.nocturne.ambient.model.Face
 import dev.nocturne.ambient.model.Settings
@@ -75,7 +76,7 @@ import dev.nocturne.ambient.ui.theme.Sora
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
-private enum class SettingsPage { MAIN, LOCATION, CALENDAR, WORLD_CLOCK }
+private enum class SettingsPage { MAIN, LOCATION, CALENDAR, WORLD_CLOCK, NOTE }
 
 @Composable
 fun SettingsOverlay(
@@ -89,6 +90,11 @@ fun SettingsOverlay(
     val focusRequester = remember { FocusRequester() }
     val weather by viewModel.weather.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
+    val note by viewModel.note.collectAsStateWithLifecycle()
+    val noteUpdatedAt by viewModel.noteUpdatedAt.collectAsStateWithLifecycle()
+    val noteUrl by viewModel.noteUrl.collectAsStateWithLifecycle()
+    val noteServerReady by viewModel.noteServerReady.collectAsStateWithLifecycle()
+    val noteServerFailed by viewModel.noteServerFailed.collectAsStateWithLifecycle()
     val syncing by viewModel.syncing.collectAsStateWithLifecycle()
 
     BackHandler {
@@ -122,6 +128,7 @@ fun SettingsOverlay(
                             SettingsPage.LOCATION -> "Weather location"
                             SettingsPage.CALENDAR -> "Calendar feeds"
                             SettingsPage.WORLD_CLOCK -> "World clocks"
+                            SettingsPage.NOTE -> "Phone notepad"
                         },
                         fontFamily = Sora,
                         fontWeight = FontWeight.Light,
@@ -136,6 +143,7 @@ fun SettingsOverlay(
                             SettingsPage.LOCATION -> "Used for weather, sunrise and sunset"
                             SettingsPage.CALENDAR -> "Private iCal feeds, no account or OAuth"
                             SettingsPage.WORLD_CLOCK -> "Three cities shown on the Analog and Dashboard faces"
+                            SettingsPage.NOTE -> "Draw from any device on your Wi-Fi · shown on the Minimal face"
                         },
                         style = EyebrowType.copy(letterSpacing = 1.6.sp),
                         color = palette.inkFaint
@@ -164,7 +172,8 @@ fun SettingsOverlay(
                             firstFocus = focusRequester,
                             onOpenLocation = { page = SettingsPage.LOCATION },
                             onOpenCalendar = { page = SettingsPage.CALENDAR },
-                            onOpenWorldClocks = { page = SettingsPage.WORLD_CLOCK }
+                            onOpenWorldClocks = { page = SettingsPage.WORLD_CLOCK },
+                            onOpenNote = { page = SettingsPage.NOTE }
                         )
                         SettingsPage.LOCATION -> LocationSettings(
                             viewModel = viewModel,
@@ -188,6 +197,18 @@ fun SettingsOverlay(
                             firstFocus = focusRequester,
                             onDone = { page = SettingsPage.MAIN }
                         )
+                        SettingsPage.NOTE -> NoteSettings(
+                            viewModel = viewModel,
+                            settings = settings,
+                            noteUrl = noteUrl,
+                            noteServerReady = noteServerReady,
+                            noteServerFailed = noteServerFailed,
+                            noteUpdatedAt = noteUpdatedAt,
+                            hasNote = note != null,
+                            palette = palette,
+                            firstFocus = focusRequester,
+                            onDone = { page = SettingsPage.MAIN }
+                        )
                     }
                 }
 
@@ -204,6 +225,7 @@ fun SettingsOverlay(
                     settings = settings,
                     weather = weather,
                     events = events,
+                    note = note,
                     palette = palette,
                     modifier = Modifier.width(226.dp).fillMaxHeight()
                 )
@@ -238,7 +260,8 @@ private fun MainSettings(
     firstFocus: FocusRequester,
     onOpenLocation: () -> Unit,
     onOpenCalendar: () -> Unit,
-    onOpenWorldClocks: () -> Unit
+    onOpenWorldClocks: () -> Unit,
+    onOpenNote: () -> Unit
 ) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         item {
@@ -325,6 +348,15 @@ private fun MainSettings(
                 palette = palette,
                 valueAccent = settings.showWorldClocks,
                 onClick = onOpenWorldClocks
+            )
+        }
+        item {
+            SettingRow(
+                label = "Phone notepad",
+                value = if (settings.noteEnabled) "On" else "Off",
+                palette = palette,
+                valueAccent = settings.noteEnabled,
+                onClick = onOpenNote
             )
         }
         item {
@@ -542,10 +574,153 @@ private fun WorldClockSettings(
 }
 
 @Composable
+private fun NoteSettings(
+    viewModel: ClockViewModel,
+    settings: Settings,
+    noteUrl: String?,
+    noteServerReady: Boolean,
+    noteServerFailed: Boolean,
+    noteUpdatedAt: Long?,
+    hasNote: Boolean,
+    palette: Palette,
+    firstFocus: FocusRequester,
+    onDone: () -> Unit
+) {
+    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        viewModel.refreshNoteUrl()
+        while (true) {
+            delay(15_000)
+            nowMs = System.currentTimeMillis()
+        }
+    }
+
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        item {
+            SettingRow(
+                label = "Phone notepad",
+                value = if (settings.noteEnabled) "On" else "Off",
+                palette = palette,
+                valueAccent = settings.noteEnabled,
+                onClick = {
+                    val turningOn = !settings.noteEnabled
+                    viewModel.updateSettings { it.copy(noteEnabled = turningOn) }
+                    viewModel.showHud(if (turningOn) "Phone notepad on" else "Phone notepad off")
+                },
+                modifier = Modifier.focusRequester(firstFocus)
+            )
+        }
+        item {
+            Spacer(Modifier.height(12.dp))
+            if (settings.noteEnabled) {
+                Text(
+                    text = "Open this address on any phone, tablet or computer connected to the same Wi-Fi:",
+                    style = LabelType.copy(fontSize = 13.sp, lineHeight = 19.sp),
+                    color = palette.inkSoft
+                )
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(palette.surface.copy(alpha = 0.62f))
+                        .border(1.dp, palette.hairline, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                        text = when {
+                            noteUrl != null -> noteUrl
+                            noteServerFailed -> "Couldn't start · port ${NoteServer.PORT} may be busy"
+                            noteServerReady -> "No Wi-Fi address found"
+                            else -> "Starting server…"
+                        },
+                        fontFamily = Sora,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 22.sp,
+                        lineHeight = 26.sp,
+                        letterSpacing = 0.6.sp,
+                        color = if (noteUrl != null) palette.accent else palette.inkFaint
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = when {
+                        noteServerReady && noteUrl != null ->
+                            "Server running · anyone on your Wi-Fi can draw"
+                        noteServerReady -> "Server running · connect the TV to Wi-Fi"
+                        noteServerFailed -> "Server not running"
+                        else -> "Waiting for the local network…"
+                    },
+                    style = EyebrowType.copy(letterSpacing = 0.9.sp),
+                    color = palette.inkFaint
+                )
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = "Draw with your finger or mouse, then tap Send to TV. The note is saved on the TV " +
+                        "and stays until you remove it. It only appears on the Minimal face.",
+                    style = LabelType.copy(fontSize = 12.sp, lineHeight = 18.sp),
+                    color = palette.inkSoft
+                )
+            } else {
+                Text(
+                    text = "The notepad is off, so the local server is not running. Turn it on to draw from your phone.",
+                    style = LabelType.copy(fontSize = 13.sp, lineHeight = 19.sp),
+                    color = palette.inkSoft
+                )
+            }
+        }
+        item {
+            Spacer(Modifier.height(18.dp))
+            Hairline(palette, alpha = 0.7f)
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = if (hasNote && noteUpdatedAt != null) {
+                    "Current note · updated ${relativeTime(noteUpdatedAt, nowMs)}"
+                } else {
+                    "No note on the TV yet"
+                },
+                style = EyebrowType.copy(letterSpacing = 1.0.sp),
+                color = palette.inkSoft
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (hasNote) {
+                    SettingsButton(
+                        label = "Clear note",
+                        palette = palette,
+                        onClick = {
+                            viewModel.clearNote()
+                            onDone()
+                        }
+                    )
+                }
+                SettingsButton(
+                    label = "Done",
+                    palette = palette,
+                    primary = true,
+                    onClick = onDone
+                )
+            }
+        }
+    }
+}
+
+private fun relativeTime(millis: Long, nowMs: Long): String {
+    val diff = (nowMs - millis).coerceAtLeast(0)
+    return when {
+        diff < 45_000 -> "just now"
+        diff < 3_600_000 -> "${(diff / 60_000).coerceAtLeast(1)} min ago"
+        diff < 86_400_000 -> "${diff / 3_600_000} h ago"
+        else -> "${diff / 86_400_000} d ago"
+    }
+}
+
+@Composable
 private fun SettingsSidebar(
     settings: Settings,
     weather: WeatherData?,
     events: List<CalendarEvent>,
+    note: ByteArray?,
     palette: Palette,
     modifier: Modifier = Modifier
 ) {
@@ -570,7 +745,7 @@ private fun SettingsSidebar(
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (settings.face) {
-                        Face.MINIMAL -> MinimalFace(settings, weather, events, now, palette)
+                        Face.MINIMAL -> MinimalFace(settings, weather, events, now, palette, note = note)
                         Face.FLIP -> FlipFace(settings, weather, events, now, palette)
                         Face.ANALOG -> AnalogFace(settings, weather, events, now, palette)
                         Face.DASHBOARD -> DashboardFace(settings, weather, events, now, palette)

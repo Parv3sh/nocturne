@@ -55,6 +55,7 @@ fun NocturneApp(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val weather by viewModel.weather.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
+    val note by viewModel.note.collectAsStateWithLifecycle()
     val showSettings by viewModel.showSettings.collectAsStateWithLifecycle()
     val hud by viewModel.hud.collectAsStateWithLifecycle()
 
@@ -101,7 +102,7 @@ fun NocturneApp(
                 label = "face"
             ) { face ->
                 when (face) {
-                    Face.MINIMAL -> MinimalFace(settings, weather, events, now, palette)
+                    Face.MINIMAL -> MinimalFace(settings, weather, events, now, palette, note = note)
                     Face.FLIP -> FlipFace(settings, weather, events, now, palette)
                     Face.ANALOG -> AnalogFace(settings, weather, events, now, palette)
                     Face.DASHBOARD -> DashboardFace(settings, weather, events, now, palette)

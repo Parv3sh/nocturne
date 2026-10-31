@@ -5,12 +5,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.nocturne.ambient.data.CalendarRepository
 import dev.nocturne.ambient.data.LocationRepository
+import dev.nocturne.ambient.data.NoteServer
 import dev.nocturne.ambient.data.SettingsRepository
 import dev.nocturne.ambient.data.WeatherRepository
 import dev.nocturne.ambient.model.CalendarEvent
 import dev.nocturne.ambient.model.Face
 import dev.nocturne.ambient.model.Settings
 import dev.nocturne.ambient.model.WeatherData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
 class ClockViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepo = SettingsRepository(application)
@@ -41,6 +45,24 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _events = MutableStateFlow<List<CalendarEvent>>(emptyList())
     val events: StateFlow<List<CalendarEvent>> = _events.asStateFlow()
+
+    private val noteFile = File(application.filesDir, "note.png")
+    private var noteServer: NoteServer? = null
+
+    private val _note = MutableStateFlow<ByteArray?>(null)
+    val note: StateFlow<ByteArray?> = _note.asStateFlow()
+
+    private val _noteUpdatedAt = MutableStateFlow<Long?>(null)
+    val noteUpdatedAt: StateFlow<Long?> = _noteUpdatedAt.asStateFlow()
+
+    private val _noteUrl = MutableStateFlow<String?>(null)
+    val noteUrl: StateFlow<String?> = _noteUrl.asStateFlow()
+
+    private val _noteServerReady = MutableStateFlow(false)
+    val noteServerReady: StateFlow<Boolean> = _noteServerReady.asStateFlow()
+
+    private val _noteServerFailed = MutableStateFlow(false)
+    val noteServerFailed: StateFlow<Boolean> = _noteServerFailed.asStateFlow()
 
     private val _syncing = MutableStateFlow(false)
     val syncing: StateFlow<Boolean> = _syncing.asStateFlow()
@@ -77,6 +99,24 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                 }
+            }
+
+            launch(Dispatchers.IO) {
+                if (noteFile.exists()) {
+                    runCatching { noteFile.readBytes() }.getOrNull()?.let { bytes ->
+                        _note.value = bytes
+                        _noteUpdatedAt.value = noteFile.lastModified()
+                    }
+                }
+            }
+
+            launch {
+                settings
+                    .map { it.noteEnabled }
+                    .distinctUntilChanged()
+                    .collect { enabled ->
+                        if (enabled) startNoteServer() else stopNoteServer()
+                    }
             }
 
             launch {
@@ -121,6 +161,59 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun syncCalendar(force: Boolean) {
         _events.value = calendarRepo.get(settings.value, force = force)
+    }
+
+    private suspend fun startNoteServer() {
+        if (noteServer != null) return
+        _noteServerFailed.value = false
+        val server = NoteServer(noteFile) { bytes ->
+            _note.value = bytes
+            _noteUpdatedAt.value = if (bytes == null) null else System.currentTimeMillis()
+            showHud(if (bytes == null) "Note cleared" else "Note updated")
+        }
+        val result = withContext(Dispatchers.IO) {
+            val started = runCatching { server.startServer() }.isSuccess
+            started to if (started) {
+                NoteServer.localIp()?.let { "http://$it:${NoteServer.PORT}" }
+            } else {
+                null
+            }
+        }
+        if (result.first) {
+            noteServer = server
+            _noteServerReady.value = true
+            _noteUrl.value = result.second
+        } else {
+            _noteServerReady.value = false
+            _noteUrl.value = null
+            _noteServerFailed.value = true
+        }
+    }
+
+    private suspend fun stopNoteServer() {
+        val server = noteServer ?: return
+        noteServer = null
+        _noteServerReady.value = false
+        _noteUrl.value = null
+        _noteServerFailed.value = false
+        withContext(Dispatchers.IO) { runCatching { server.stop() } }
+    }
+
+    fun clearNote() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { runCatching { noteFile.delete() } }
+            _note.value = null
+            _noteUpdatedAt.value = null
+            showHud("Note cleared")
+        }
+    }
+
+    fun refreshNoteUrl() {
+        if (noteServer == null) return
+        viewModelScope.launch {
+            val ip = withContext(Dispatchers.IO) { NoteServer.localIp() }
+            _noteUrl.value = ip?.let { "http://$it:${NoteServer.PORT}" }
+        }
     }
 
     fun updateSettings(transform: (Settings) -> Settings) {
@@ -217,5 +310,11 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
                 showHud("Could not detect location")
             }
         }
+    }
+
+    override fun onCleared() {
+        runCatching { noteServer?.stop() }
+        noteServer = null
+        super.onCleared()
     }
 }

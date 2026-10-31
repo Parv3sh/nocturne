@@ -1,6 +1,9 @@
 package dev.nocturne.ambient.ui.faces
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,11 +17,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +63,7 @@ fun MinimalFace(
     events: List<CalendarEvent>,
     now: LocalDateTime,
     palette: Palette,
+    note: ByteArray? = null,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -112,47 +122,63 @@ fun MinimalFace(
 
             Spacer(Modifier.weight(1f))
 
-            Text(
-                text = formattedDate(now.toLocalDate()),
-                style = LabelType.copy(fontSize = dateSize, letterSpacing = 0.2.sp),
-                color = palette.inkSoft
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = "${parts.hour}:${parts.minute}",
-                    fontFamily = Sora,
-                    fontWeight = FontWeight.ExtraLight,
-                    fontSize = timeSize,
-                    lineHeight = timeSize,
-                    letterSpacing = (-7).sp,
-                    color = palette.ink,
-                    maxLines = 1
-                )
-                if (settings.showSeconds) {
-                    Column(
-                        modifier = Modifier.padding(start = 18.dp, bottom = (timeSize.value * 0.12f).dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = formattedDate(now.toLocalDate()),
+                        style = LabelType.copy(fontSize = dateSize, letterSpacing = 0.2.sp),
+                        color = palette.inkSoft
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = parts.second,
-                            style = LabelType.copy(fontSize = 24.sp),
-                            color = palette.accent
+                            text = "${parts.hour}:${parts.minute}",
+                            fontFamily = Sora,
+                            fontWeight = FontWeight.ExtraLight,
+                            fontSize = timeSize,
+                            lineHeight = timeSize,
+                            letterSpacing = (-7).sp,
+                            color = palette.ink,
+                            maxLines = 1
                         )
-                        if (parts.suffix.isNotEmpty()) {
+                        if (settings.showSeconds) {
+                            Column(
+                                modifier = Modifier.padding(start = 18.dp, bottom = (timeSize.value * 0.12f).dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = parts.second,
+                                    style = LabelType.copy(fontSize = 24.sp),
+                                    color = palette.accent
+                                )
+                                if (parts.suffix.isNotEmpty()) {
+                                    Text(
+                                        text = parts.suffix,
+                                        style = EyebrowType,
+                                        color = palette.inkFaint
+                                    )
+                                }
+                            }
+                        } else if (parts.suffix.isNotEmpty()) {
                             Text(
                                 text = parts.suffix,
-                                style = EyebrowType,
-                                color = palette.inkFaint
+                                style = EyebrowType.copy(fontSize = 13.sp),
+                                color = palette.inkFaint,
+                                modifier = Modifier.padding(start = 18.dp, bottom = (timeSize.value * 0.14f).dp)
                             )
                         }
                     }
-                } else if (parts.suffix.isNotEmpty()) {
-                    Text(
-                        text = parts.suffix,
-                        style = EyebrowType.copy(fontSize = 13.sp),
-                        color = palette.inkFaint,
-                        modifier = Modifier.padding(start = 18.dp, bottom = (timeSize.value * 0.14f).dp)
+                }
+                if (wide && settings.noteEnabled && note != null) {
+                    Spacer(Modifier.width(28.dp))
+                    NoteCard(
+                        note = note,
+                        modifier = Modifier
+                            .width(230.dp)
+                            .height(300.dp)
                     )
                 }
             }
@@ -232,5 +258,31 @@ private fun WeatherSummary(
                 color = palette.inkFaint
             )
         }
+    }
+}
+
+@Composable
+private fun NoteCard(
+    note: ByteArray,
+    modifier: Modifier = Modifier
+) {
+    val bitmap = remember(note) {
+        BitmapFactory.decodeByteArray(note, 0, note.size)?.asImageBitmap()
+    }
+    if (bitmap == null) return
+    Box(
+        modifier = modifier
+            .shadow(18.dp, RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(7.dp))
+            .background(Color(0xFFF4F0E5))
+            .border(1.dp, Color(0xFFD2CAB7), RoundedCornerShape(7.dp))
+            .padding(12.dp)
+    ) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = "Note from your phone",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
