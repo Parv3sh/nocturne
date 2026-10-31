@@ -275,3 +275,13 @@ fun aqiLabel(aqi: Int?): String? = when {
     aqi <= 300 -> "Very unhealthy"
     else -> "Hazardous"
 }
+
+fun aqiShortLabel(aqi: Int?): String? = when {
+    aqi == null -> null
+    aqi <= 50 -> "Good"
+    aqi <= 100 -> "Moderate"
+    aqi <= 150 -> "Sensitive"
+    aqi <= 200 -> "Unhealthy"
+    aqi <= 300 -> "Very unhealthy"
+    else -> "Hazardous"
+}

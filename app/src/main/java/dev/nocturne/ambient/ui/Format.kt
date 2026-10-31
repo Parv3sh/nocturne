@@ -141,6 +141,14 @@ fun worldDayDelta(timezone: String, now: ZonedDateTime = ZonedDateTime.now()): S
     }
 }
 
+fun dimLevel(now: LocalDateTime, settings: Settings): Float {
+    val night = now.toLocalTime() >= LocalTime.of(22, 30) ||
+        now.toLocalTime() < LocalTime.of(7, 0)
+    val nightDim = if (settings.nightDim && night) 0.42f else 0f
+    val brightnessDim = (1f - settings.brightness).coerceIn(0f, 1f) * 0.68f
+    return (nightDim + brightnessDim).coerceAtMost(0.80f)
+}
+
 fun smoothShift(minutes: Long, amplitude: Float, enabled: Boolean): Float {
     if (!enabled) return 0f
     val period = 23.0

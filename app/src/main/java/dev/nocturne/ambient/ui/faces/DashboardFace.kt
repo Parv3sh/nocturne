@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import dev.nocturne.ambient.model.CalendarEvent
 import dev.nocturne.ambient.model.Settings
 import dev.nocturne.ambient.model.WeatherData
-import dev.nocturne.ambient.model.aqiLabel
+import dev.nocturne.ambient.model.aqiShortLabel
 import dev.nocturne.ambient.ui.dayLabel
 import dev.nocturne.ambient.ui.eventTime
 import dev.nocturne.ambient.ui.formatClock
@@ -245,38 +245,40 @@ fun DashboardFace(
                     Hairline(palette, alpha = 0.8f)
                     Spacer(Modifier.height(11.dp))
 
-                    Row(
+                    if (settings.showWorldClocks) {
+                        WorldClocks(palette, settings)
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalAlignment = Alignment.End
                     ) {
-                        if (settings.showWorldClocks) {
-                            WorldClocks(palette, settings)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        Column(horizontalAlignment = Alignment.End) {
-                            val aqi = weather?.aqi
-                            if (aqi != null) {
-                                Text(
-                                    text = "AQI $aqi  ·  ${aqiLabel(aqi)?.uppercase() ?: ""}",
-                                    style = EyebrowType.copy(letterSpacing = 1.2.sp),
-                                    color = palette.inkFaint
-                                )
-                            }
+                        val aqi = weather?.aqi
+                        if (aqi != null) {
+                            Text(
+                                text = "AQI $aqi  ·  ${aqiShortLabel(aqi)?.uppercase() ?: ""}",
+                                style = EyebrowType.copy(letterSpacing = 1.2.sp),
+                                color = palette.inkFaint,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
                             Spacer(Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                MoonGlyph(
-                                    phase = moonPhase,
-                                    tint = palette.inkSoft,
-                                    background = palette.background,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(Modifier.width(7.dp))
-                                Text(
-                                    text = "${moonName(moonPhase).uppercase()}  ${moonIllumination(moonPhase)}%",
-                                    style = EyebrowType.copy(letterSpacing = 0.9.sp),
-                                    color = palette.inkFaint
-                                )
-                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MoonGlyph(
+                                phase = moonPhase,
+                                tint = palette.inkSoft,
+                                background = palette.background,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(Modifier.width(7.dp))
+                            Text(
+                                text = "${moonName(moonPhase).uppercase()}  ${moonIllumination(moonPhase)}%",
+                                style = EyebrowType.copy(letterSpacing = 0.9.sp),
+                                color = palette.inkFaint
+                            )
                         }
                     }
                 }

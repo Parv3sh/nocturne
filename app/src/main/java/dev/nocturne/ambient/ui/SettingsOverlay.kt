@@ -6,9 +6,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +36,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -44,10 +48,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.nocturne.ambient.ClockViewModel
+import dev.nocturne.ambient.model.CalendarEvent
+import dev.nocturne.ambient.model.Face
 import dev.nocturne.ambient.model.Settings
 import dev.nocturne.ambient.model.WeatherData
 import dev.nocturne.ambient.model.cityPresets
@@ -55,15 +62,16 @@ import dev.nocturne.ambient.model.zonePresets
 import dev.nocturne.ambient.ui.components.Eyebrow
 import dev.nocturne.ambient.ui.components.Hairline
 import dev.nocturne.ambient.ui.components.MoonGlyph
-import dev.nocturne.ambient.ui.components.WeatherGlyph
 import dev.nocturne.ambient.ui.components.rememberNow
+import dev.nocturne.ambient.ui.faces.AmbientFace
+import dev.nocturne.ambient.ui.faces.AnalogFace
+import dev.nocturne.ambient.ui.faces.DashboardFace
+import dev.nocturne.ambient.ui.faces.FlipFace
+import dev.nocturne.ambient.ui.faces.MinimalFace
 import dev.nocturne.ambient.ui.theme.EyebrowType
 import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
 import dev.nocturne.ambient.ui.theme.Sora
-import dev.nocturne.ambient.ui.timeParts
-import dev.nocturne.ambient.ui.temperature
-import java.time.LocalDateTime
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -80,6 +88,7 @@ fun SettingsOverlay(
     var calendarDraft by remember(settings.calendarUrls) { mutableStateOf(settings.calendarUrls) }
     val focusRequester = remember { FocusRequester() }
     val weather by viewModel.weather.collectAsStateWithLifecycle()
+    val events by viewModel.events.collectAsStateWithLifecycle()
     val syncing by viewModel.syncing.collectAsStateWithLifecycle()
 
     BackHandler {
@@ -194,6 +203,7 @@ fun SettingsOverlay(
                 SettingsSidebar(
                     settings = settings,
                     weather = weather,
+                    events = events,
                     palette = palette,
                     modifier = Modifier.width(226.dp).fillMaxHeight()
                 )
@@ -535,55 +545,46 @@ private fun WorldClockSettings(
 private fun SettingsSidebar(
     settings: Settings,
     weather: WeatherData?,
+    events: List<CalendarEvent>,
     palette: Palette,
     modifier: Modifier = Modifier
 ) {
     val now = rememberNow(true)
-    val parts = timeParts(now.toLocalTime(), settings.use24Hour)
     val moonPhase = dev.nocturne.ambient.ui.moonPhaseFraction(now.toLocalDate())
 
     Column(modifier = modifier) {
         Eyebrow("Live preview", palette)
         Spacer(Modifier.height(10.dp))
-        Text(
-            text = if (settings.showSeconds) {
-                "${parts.hour}:${parts.minute}:${parts.second}"
-            } else {
-                "${parts.hour}:${parts.minute}"
-            },
-            fontFamily = Sora,
-            fontWeight = FontWeight.ExtraLight,
-            fontSize = 46.sp,
-            lineHeight = 48.sp,
-            letterSpacing = (-1.5).sp,
-            color = palette.ink
-        )
-        Spacer(Modifier.height(3.dp))
-        Text(
-            text = formattedDateShort(now),
-            style = LabelType.copy(fontSize = 12.sp),
-            color = palette.inkSoft
-        )
-        Spacer(Modifier.height(13.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (weather != null) {
-                WeatherGlyph(
-                    kind = weather.kind,
-                    isDay = weather.isDay,
-                    tint = palette.inkSoft,
-                    accent = palette.accent,
-                    modifier = Modifier.size(19.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "${temperature(weather.temperature, settings.celsius)}  ${weather.description}",
-                    style = LabelType.copy(fontSize = 11.sp),
-                    color = palette.inkSoft,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            } else {
-                Text("Weather loading…", style = EyebrowType, color = palette.inkFaint)
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(10.dp))
+                .border(1.dp, palette.hairline, RoundedCornerShape(10.dp))
+                .background(palette.backgroundDeep)
+        ) {
+            val baseDensity = LocalDensity.current
+            val factor = (maxWidth / 960.dp).coerceIn(0.05f, 1f)
+            CompositionLocalProvider(
+                LocalDensity provides Density(baseDensity.density * factor, baseDensity.fontScale)
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (settings.face) {
+                        Face.MINIMAL -> MinimalFace(settings, weather, events, now, palette)
+                        Face.FLIP -> FlipFace(settings, weather, events, now, palette)
+                        Face.ANALOG -> AnalogFace(settings, weather, events, now, palette)
+                        Face.DASHBOARD -> DashboardFace(settings, weather, events, now, palette)
+                        Face.AMBIENT -> AmbientFace(settings, weather, now, palette)
+                    }
+                    val dim = dimLevel(now, settings)
+                    if (dim > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Black.copy(alpha = dim))
+                        )
+                    }
+                }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -740,6 +741,4 @@ private fun SettingsButton(
     }
 }
 
-private fun formattedDateShort(now: LocalDateTime): String {
-    return now.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM", java.util.Locale.getDefault()))
-}
+

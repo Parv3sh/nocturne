@@ -46,7 +46,6 @@ import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
 import dev.nocturne.ambient.ui.theme.paletteFor
 import kotlinx.coroutines.delay
-import java.time.LocalTime
 
 @Composable
 fun NocturneApp(
@@ -79,11 +78,7 @@ fun NocturneApp(
     val shiftX = if (settings.motion) smoothShift(minutes, 2.4f, true) else 0f
     val shiftY = if (settings.motion) smoothShift(minutes + 347, 1.4f, true) else 0f
 
-    val night = now.toLocalTime() >= LocalTime.of(22, 30) ||
-        now.toLocalTime() < LocalTime.of(7, 0)
-    val nightDim = if (settings.nightDim && night) 0.42f else 0f
-    val brightnessDim = (1f - settings.brightness).coerceIn(0f, 1f) * 0.68f
-    val dim = (nightDim + brightnessDim).coerceAtMost(0.80f)
+    val dim = dimLevel(now, settings)
 
     Box(modifier = Modifier.fillMaxSize().background(palette.backgroundDeep)) {
         NocturneBackdrop(
