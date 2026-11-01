@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
-    paths-ignore: ["**.md", "docs/**", "tizen/**"]
+    paths-ignore: ["**.md", "LICENSE", "docs/**", "tizen/**"]
   workflow_dispatch:
 
 permissions:

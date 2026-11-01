@@ -136,3 +136,6 @@ internet access is involved.
   working TV display path.
 
 No ads, accounts, subscriptions, or telemetry.
+
+## License
+MIT, see `LICENSE`. Bundled Manrope and Sora fonts are under the SIL Open Font License.
