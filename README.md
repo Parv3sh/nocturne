@@ -92,13 +92,10 @@ line in `local.properties`.
 Output: `app/build/outputs/apk/debug/app-debug.apk`
 
 ## Releases
-Push a tag like `v1.0` and the **Release** workflow builds the APK, uploads it as a workflow
-artifact, and attaches it to a GitHub release. It can also be run by hand from the Actions tab
-(artifact only, no release).
-
-```bash
-git tag v1.0 && git push origin v1.0
-```
+Every push to `main` that changes app code runs the **Release** workflow. It builds the APK
+and publishes a GitHub release tagged `v1.0.<run number>` with the APK attached. Changes to
+Markdown, `docs/`, or `tizen/` do not trigger it. It can also be started by hand from the
+Actions tab.
 
 ## Install & run on Fire TV
 Enable ADB debugging on the Fire TV, then:
