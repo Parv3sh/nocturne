@@ -75,9 +75,8 @@ Actual captures from a Fire TV Stick 4K and a 390 × 844 phone viewport.
 - `app/`: Kotlin + Jetpack Compose app source
 - `docs/screenshots/`: captures used in the gallery above
 - `build.gradle.kts`, `settings.gradle.kts`, `gradle/`: Gradle build with wrapper included
-- APK build output: `app/build/outputs/apk/debug/app-debug.apk` (not committed)
 
-## Build
+## Build from source
 Requires JDK 21, Android SDK platform 34, and build-tools 34.0.0. The Gradle wrapper
 handles Gradle itself.
 
@@ -89,8 +88,6 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@21   # example path on macOS
 If the SDK is not auto-detected, point the build at it with `ANDROID_HOME` or a `sdk.dir`
 line in `local.properties`.
 
-Output: `app/build/outputs/apk/debug/app-debug.apk`
-
 ## Releases
 Every push to `main` that changes app code runs the **Release** workflow. It builds the APK
 and publishes a GitHub release tagged `v1.0.<run number>` with the APK attached. Changes to
@@ -98,11 +95,12 @@ Markdown, `docs/`, or `tizen/` do not trigger it. It can also be started by hand
 Actions tab.
 
 ## Install & run on Fire TV
-Enable ADB debugging on the Fire TV, then:
+Download the APK from the [latest release](../../releases/latest) and enable ADB debugging
+on the Fire TV, then:
 
 ```bash
 adb connect <fire-tv-ip>:5555
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r nocturne-v*.apk
 adb shell am start -n dev.nocturne.ambient/.MainActivity
 ```
 
