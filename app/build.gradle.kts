@@ -18,9 +18,21 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        getByName("debug") {
+            // Stable debug key so CI release APKs install over each other.
+            // Debug-only key, not used for Play Store or production signing.
+            storeFile = rootProject.file("keystore/nocturne-debug.jks")
+            storePassword = "nocturne"
+            keyAlias = "nocturne"
+            keyPassword = "nocturne"
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
         }
         release {
             isMinifyEnabled = true
