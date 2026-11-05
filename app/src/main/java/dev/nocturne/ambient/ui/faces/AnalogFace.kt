@@ -247,7 +247,7 @@ fun AnalogFace(
                         Spacer(Modifier.height(16.dp))
                         Hairline(palette, alpha = 0.8f)
                         Spacer(Modifier.height(14.dp))
-                        WorldClocks(palette, settings)
+                        WorldClocks(palette, settings, now)
                     }
                 }
             }

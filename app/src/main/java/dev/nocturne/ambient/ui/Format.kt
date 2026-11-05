@@ -124,10 +124,9 @@ fun greeting(hour: Int): String = when (hour) {
 
 fun worldClock(timezone: String, use24Hour: Boolean, now: ZonedDateTime = ZonedDateTime.now()): String {
     val zoned = now.withZoneSameInstant(ZoneId.of(timezone))
-    val h = if (use24Hour) zoned.hour else ((zoned.hour + 11) % 12) + 1
-    val hh = if (use24Hour) h.toString().padStart(2, '0') else h.toString()
-    val mm = zoned.minute.toString().padStart(2, '0')
-    return "$hh:$mm"
+    val parts = timeParts(zoned.toLocalTime(), use24Hour)
+    val base = "${parts.hour}:${parts.minute}"
+    return if (parts.suffix.isEmpty()) base else "$base ${parts.suffix}"
 }
 
 fun worldDayDelta(timezone: String, now: ZonedDateTime = ZonedDateTime.now()): String {

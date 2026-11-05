@@ -246,7 +246,7 @@ fun DashboardFace(
                     Spacer(Modifier.height(11.dp))
 
                     if (settings.showWorldClocks) {
-                        WorldClocks(palette, settings)
+                        WorldClocks(palette, settings, now)
                         Spacer(Modifier.height(8.dp))
                     }
 

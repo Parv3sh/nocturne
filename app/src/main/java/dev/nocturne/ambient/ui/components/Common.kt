@@ -29,7 +29,8 @@ import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
 import dev.nocturne.ambient.ui.worldClock
 import dev.nocturne.ambient.ui.worldDayDelta
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 @Composable
 fun Hairline(palette: Palette, modifier: Modifier = Modifier, alpha: Float = 1f) {
@@ -99,12 +100,13 @@ fun EventLine(
 fun WorldClocks(
     palette: Palette,
     settings: Settings,
+    now: LocalDateTime,
     modifier: Modifier = Modifier
 ) {
     val clocks = settings.worldClockCities.map { city ->
         city.zone to city.label.uppercase()
     }
-    val now = ZonedDateTime.now()
+    val zonedNow = now.atZone(ZoneId.systemDefault())
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(32.dp),
@@ -121,7 +123,7 @@ fun WorldClocks(
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = worldClock(zone, settings.use24Hour, now),
+                    text = worldClock(zone, settings.use24Hour, zonedNow),
                     style = LabelType.copy(fontSize = 18.sp, letterSpacing = 0.4.sp),
                     color = palette.ink
                 )
@@ -131,7 +133,7 @@ fun WorldClocks(
                         style = EyebrowType,
                         color = palette.inkFaint
                     )
-                    val delta = worldDayDelta(zone, now)
+                    val delta = worldDayDelta(zone, zonedNow)
                     if (delta.isNotEmpty()) {
                         Spacer(Modifier.width(5.dp))
                         Text(
