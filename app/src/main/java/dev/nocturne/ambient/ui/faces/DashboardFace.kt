@@ -105,7 +105,7 @@ fun DashboardFace(
                             Text(
                                 text = parts.suffix,
                                 style = ClockSuffixType,
-                                color = palette.inkFaint,
+                                color = palette.ink,
                                 modifier = Modifier.padding(start = 8.dp, bottom = 11.dp)
                             )
                         }

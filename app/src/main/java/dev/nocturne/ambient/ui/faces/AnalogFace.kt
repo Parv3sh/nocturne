@@ -147,7 +147,7 @@ fun AnalogFace(
                             Text(
                                 text = parts.suffix,
                                 style = ClockSuffixType,
-                                color = palette.inkFaint,
+                                color = palette.ink,
                                 modifier = Modifier.padding(start = 10.dp, bottom = 14.dp)
                             )
                         }

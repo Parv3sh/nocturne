@@ -159,7 +159,7 @@ fun MinimalFace(
                                     Text(
                                         text = parts.suffix,
                                         style = ClockSuffixType,
-                                        color = palette.inkFaint
+                                        color = palette.ink
                                     )
                                 }
                             }
@@ -167,7 +167,7 @@ fun MinimalFace(
                             Text(
                                 text = parts.suffix,
                                 style = ClockSuffixType,
-                                color = palette.inkFaint,
+                                color = palette.ink,
                                 modifier = Modifier.padding(start = 18.dp, bottom = (timeSize.value * 0.14f).dp)
                             )
                         }

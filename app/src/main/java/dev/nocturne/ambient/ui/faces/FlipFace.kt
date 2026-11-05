@@ -124,7 +124,7 @@ fun FlipFace(
                         Text(
                             text = parts.suffix,
                             style = ClockSuffixType,
-                            color = palette.accent
+                            color = palette.ink
                         )
                         if (settings.showSeconds) {
                             Spacer(Modifier.height(8.dp))

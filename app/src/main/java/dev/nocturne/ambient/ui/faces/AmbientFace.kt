@@ -71,7 +71,7 @@ fun AmbientFace(
                         Text(
                             text = parts.suffix,
                             style = ClockSuffixType,
-                            color = palette.inkFaint,
+                            color = palette.ink,
                             modifier = Modifier.padding(start = 12.dp, bottom = 20.dp)
                         )
                     }
