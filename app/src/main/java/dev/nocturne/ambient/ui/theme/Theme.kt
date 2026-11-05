@@ -64,8 +64,8 @@ val LabelType = TextStyle(
 val ClockSuffixType = TextStyle(
     fontFamily = EmberBold,
     fontWeight = FontWeight.Normal,
-    fontSize = 15.sp,
-    letterSpacing = 1.8.sp
+    fontSize = 24.sp,
+    letterSpacing = 2.sp
 )
 
 val BodyType = TextStyle(
