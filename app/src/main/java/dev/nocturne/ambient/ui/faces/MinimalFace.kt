@@ -43,6 +43,7 @@ import dev.nocturne.ambient.ui.moonName
 import dev.nocturne.ambient.ui.moonPhaseFraction
 import dev.nocturne.ambient.ui.nextEvent
 import dev.nocturne.ambient.ui.temperature
+import dev.nocturne.ambient.ui.theme.ClockSuffixType
 import dev.nocturne.ambient.ui.theme.EyebrowType
 import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
@@ -157,7 +158,7 @@ fun MinimalFace(
                                 if (parts.suffix.isNotEmpty()) {
                                     Text(
                                         text = parts.suffix,
-                                        style = EyebrowType,
+                                        style = ClockSuffixType,
                                         color = palette.inkFaint
                                     )
                                 }
@@ -165,7 +166,7 @@ fun MinimalFace(
                         } else if (parts.suffix.isNotEmpty()) {
                             Text(
                                 text = parts.suffix,
-                                style = EyebrowType.copy(fontSize = 13.sp),
+                                style = ClockSuffixType,
                                 color = palette.inkFaint,
                                 modifier = Modifier.padding(start = 18.dp, bottom = (timeSize.value * 0.14f).dp)
                             )

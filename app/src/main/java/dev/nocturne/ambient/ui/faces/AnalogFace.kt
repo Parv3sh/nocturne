@@ -39,6 +39,7 @@ import dev.nocturne.ambient.ui.formattedDate
 import dev.nocturne.ambient.ui.nextEvent
 import dev.nocturne.ambient.ui.sunProgress
 import dev.nocturne.ambient.ui.temperature
+import dev.nocturne.ambient.ui.theme.ClockSuffixType
 import dev.nocturne.ambient.ui.theme.EyebrowType
 import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
@@ -145,7 +146,7 @@ fun AnalogFace(
                         if (parts.suffix.isNotEmpty()) {
                             Text(
                                 text = parts.suffix,
-                                style = EyebrowType,
+                                style = ClockSuffixType,
                                 color = palette.inkFaint,
                                 modifier = Modifier.padding(start = 10.dp, bottom = 14.dp)
                             )

@@ -45,6 +45,7 @@ import dev.nocturne.ambient.ui.moonPhaseFraction
 import dev.nocturne.ambient.ui.nextEvent
 import dev.nocturne.ambient.ui.sunProgress
 import dev.nocturne.ambient.ui.temperature
+import dev.nocturne.ambient.ui.theme.ClockSuffixType
 import dev.nocturne.ambient.ui.theme.EyebrowType
 import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
@@ -103,7 +104,7 @@ fun DashboardFace(
                         if (parts.suffix.isNotEmpty()) {
                             Text(
                                 text = parts.suffix,
-                                style = EyebrowType,
+                                style = ClockSuffixType,
                                 color = palette.inkFaint,
                                 modifier = Modifier.padding(start = 8.dp, bottom = 11.dp)
                             )

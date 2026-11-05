@@ -43,6 +43,7 @@ import dev.nocturne.ambient.ui.formatClock
 import dev.nocturne.ambient.ui.formattedDate
 import dev.nocturne.ambient.ui.nextEvent
 import dev.nocturne.ambient.ui.temperature
+import dev.nocturne.ambient.ui.theme.ClockSuffixType
 import dev.nocturne.ambient.ui.theme.EyebrowType
 import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
@@ -122,7 +123,7 @@ fun FlipFace(
                     Column(horizontalAlignment = Alignment.Start) {
                         Text(
                             text = parts.suffix,
-                            style = EyebrowType.copy(fontSize = 14.sp, letterSpacing = 2.sp),
+                            style = ClockSuffixType,
                             color = palette.accent
                         )
                         if (settings.showSeconds) {

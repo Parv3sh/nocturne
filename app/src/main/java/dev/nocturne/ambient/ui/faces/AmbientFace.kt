@@ -23,6 +23,7 @@ import dev.nocturne.ambient.ui.formattedDate
 import dev.nocturne.ambient.ui.moonIllumination
 import dev.nocturne.ambient.ui.moonPhaseFraction
 import dev.nocturne.ambient.ui.temperature
+import dev.nocturne.ambient.ui.theme.ClockSuffixType
 import dev.nocturne.ambient.ui.theme.EyebrowType
 import dev.nocturne.ambient.ui.theme.LabelType
 import dev.nocturne.ambient.ui.theme.Palette
@@ -69,7 +70,7 @@ fun AmbientFace(
                     if (parts.suffix.isNotEmpty()) {
                         Text(
                             text = parts.suffix,
-                            style = EyebrowType,
+                            style = ClockSuffixType,
                             color = palette.inkFaint,
                             modifier = Modifier.padding(start = 12.dp, bottom = 20.dp)
                         )

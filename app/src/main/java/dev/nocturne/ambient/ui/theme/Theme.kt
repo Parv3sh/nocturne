@@ -54,6 +54,12 @@ val LabelType = TextStyle(
     letterSpacing = 0.8.sp
 )
 
+val ClockSuffixType = EyebrowType.copy(
+    fontWeight = FontWeight.Bold,
+    fontSize = 14.sp,
+    letterSpacing = 1.8.sp
+)
+
 val BodyType = TextStyle(
     fontFamily = Manrope,
     fontWeight = FontWeight.Normal,
