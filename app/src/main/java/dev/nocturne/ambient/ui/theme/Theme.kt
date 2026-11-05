@@ -22,8 +22,15 @@ private val bodyTypeface: Typeface = runCatching {
     Typeface.create("sans-serif", Typeface.NORMAL)
 }
 
+private val boldTypeface: Typeface = runCatching {
+    Typeface.createFromFile("/system/fonts/Amazon-Ember-Bold.ttf")
+}.getOrElse {
+    Typeface.create("sans-serif", Typeface.BOLD)
+}
+
 val Sora = FontFamily(displayTypeface)
 val Manrope = FontFamily(bodyTypeface)
+val EmberBold = FontFamily(boldTypeface)
 
 val HeroType = TextStyle(
     fontFamily = Sora,
@@ -54,9 +61,10 @@ val LabelType = TextStyle(
     letterSpacing = 0.8.sp
 )
 
-val ClockSuffixType = EyebrowType.copy(
-    fontWeight = FontWeight.Bold,
-    fontSize = 14.sp,
+val ClockSuffixType = TextStyle(
+    fontFamily = EmberBold,
+    fontWeight = FontWeight.Normal,
+    fontSize = 15.sp,
     letterSpacing = 1.8.sp
 )
 
